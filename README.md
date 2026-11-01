@@ -98,9 +98,7 @@ with a different key, which happens if you installed a debug build. Uninstall it
 Nothing has run on a phone or emulator yet, so everything about how the app behaves on a device is untested, including
 the WebRTC video in the WebView, sound, rotation, immersive mode, the Back button and the look of the icon.
 
-The checks made so far, without the Android SDK: the Gradle build configures with the real Android Gradle Plugin, the
-Kotlin code compiles against the Android 16 APIs, the unit tests pass, and `aapt2` accepts the manifest and resources.
-The workflows have not run yet.
+What has run is the build itself: the Build workflow compiles the debug APK and passes the unit tests on GitHub Actions.
 
 The unit tests cover only the address parsing and the rules for what may be loaded
 ([`ServerAddressTest`](app/src/test/kotlin/io/github/rubinhos/streamiso/server/ServerAddressTest.kt)).
@@ -168,21 +166,28 @@ Never commit the keystore or the passwords. `.gitignore` covers the usual keysto
 
 ## Releasing a version
 
-Push a tag named `v` plus three numbers:
+**Releases are automatic.** Every push to `master` that changes the app or its build (`app/`, `gradle/` and the Gradle
+files at the root) publishes the next patch version, for example `v0.1.2` after `v0.1.1`. Merging a pull request counts.
+There is no pause for testing, so test the debug APK from the pull request before merging. Changes to anything else, such
+as this README or the workflows, do not publish a release.
+
+The [Release workflow](.github/workflows/release.yml) builds and signs the APK, checks the signature and creates a GitHub
+Release, and its tag, with `streamiso-<version>.apk` and its SHA-256 checksum attached.
+
+**To choose the number yourself,** for a bigger change, push a tag named `v` plus three numbers. Automatic releases then
+continue from it:
 
 ```
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
-The [Release workflow](.github/workflows/release.yml) then builds and signs the APK, checks the signature and creates a
-GitHub Release with `streamiso-0.1.0.apk` and its SHA-256 checksum attached.
-
-The version comes from the tag, not from a file: `versionName` is `0.1.0`, and `versionCode` is
+The version comes from the tag, not from a file: `versionName` is `0.2.0`, and `versionCode` is
 `major * 1000000 + minor * 1000 + patch` (`v1.2.3` gives `1002003`). Each new tag must be a higher version than the last,
 or Android will refuse the update. Minor and patch must stay below 1000.
 
-If a release fails, fix the problem and push a new tag with the next number. That is simpler than moving a tag.
+If a release fails, fix the problem and merge the fix: the next run uses the same number, because a failed run creates no
+tag. A tag you pushed by hand stays in place even if its release failed, so push a new tag with the next number.
 
 ## Project layout
 
