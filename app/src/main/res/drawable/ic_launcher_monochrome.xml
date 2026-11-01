@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The foreground in a single color, for the themed icons of Android 13 and newer. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="256"
+        android:pivotY="256"
+        android:scaleX="0.2357"
+        android:scaleY="0.2357"
+        android:translateX="-202"
+        android:translateY="-202">
+        <path
+            android:pathData="M134.91,256a88.5,88.5 0 1,0 177,0a88.5,88.5 0 1,0 -177,0z"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="22.99" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M204.67,218.5L204.67,293.5L265.08,256Z"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineJoin="round"
+            android:strokeWidth="12.52" />
+        <path
+            android:pathData="M315.7,189A114,114 0 0,1 315.7,323"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round"
+            android:strokeWidth="12.5" />
+        <path
+            android:pathData="M333.8,175.8A136.4,136.4 0 0,1 333.8,336.2"
+            android:strokeAlpha="0.62"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round"
+            android:strokeWidth="12.5" />
+        <path
+            android:pathData="M351.9,162.6A158.9,158.9 0 0,1 351.9,349.4"
+            android:strokeAlpha="0.34"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round"
+            android:strokeWidth="12.5" />
+    </group>
+</vector>

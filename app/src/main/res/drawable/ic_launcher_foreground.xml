@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The disc with the play button, from catalog/static/icons/icon.svg in the StreamISO repository, with the
+    same coordinates (a 512 unit canvas). The artwork reaches 140 units from the center, and the group
+    scales it so that it fits the 66dp circle that every launcher mask keeps visible (33 / 140 = 0.2357).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="256"
+        android:pivotY="256"
+        android:scaleX="0.2357"
+        android:scaleY="0.2357"
+        android:translateX="-202"
+        android:translateY="-202">
+
+        <path
+            android:fillColor="#0D0F1C"
+            android:pathData="M134.91,256a88.5,88.5 0 1,0 177,0a88.5,88.5 0 1,0 -177,0z"
+            android:strokeWidth="22.99">
+            <aapt:attr name="android:strokeColor">
+                <gradient
+                    android:endColor="#F0A020"
+                    android:endX="323"
+                    android:endY="356"
+                    android:startColor="#FFD166"
+                    android:startX="123"
+                    android:startY="156"
+                    android:type="linear" />
+            </aapt:attr>
+        </path>
+
+        <path
+            android:pathData="M159.68,256a63.73,63.73 0 1,0 127.46,0a63.73,63.73 0 1,0 -127.46,0z"
+            android:strokeAlpha="0.10"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3.08" />
+
+        <path
+            android:pathData="M204.67,218.5L204.67,293.5L265.08,256Z"
+            android:strokeLineJoin="round"
+            android:strokeWidth="12.52">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:endColor="#F0A020"
+                    android:endX="265"
+                    android:endY="294"
+                    android:startColor="#FFD166"
+                    android:startX="205"
+                    android:startY="218"
+                    android:type="linear" />
+            </aapt:attr>
+            <aapt:attr name="android:strokeColor">
+                <gradient
+                    android:endColor="#F0A020"
+                    android:endX="265"
+                    android:endY="294"
+                    android:startColor="#FFD166"
+                    android:startX="205"
+                    android:startY="218"
+                    android:type="linear" />
+            </aapt:attr>
+        </path>
+
+        <path
+            android:pathData="M315.7,189A114,114 0 0,1 315.7,323"
+            android:strokeColor="#F8B840"
+            android:strokeLineCap="round"
+            android:strokeWidth="12.5" />
+        <path
+            android:pathData="M333.8,175.8A136.4,136.4 0 0,1 333.8,336.2"
+            android:strokeAlpha="0.62"
+            android:strokeColor="#F8B840"
+            android:strokeLineCap="round"
+            android:strokeWidth="12.5" />
+        <path
+            android:pathData="M351.9,162.6A158.9,158.9 0 0,1 351.9,349.4"
+            android:strokeAlpha="0.34"
+            android:strokeColor="#F8B840"
+            android:strokeLineCap="round"
+            android:strokeWidth="12.5" />
+    </group>
+</vector>
