@@ -72,7 +72,8 @@ internet.**
 
 - **`NEKO_PUBLIC_URL` on another host does not work.** The app blocks every host other than the server's, so a video
   stream published on a different host is refused. A different port of the same host is fine.
-- **The Fullscreen button of the web player does nothing in the app.** DVDs are already full screen.
+- **The web player cannot go fullscreen by itself in the app,** but DVDs are already full screen. With a current StreamISO
+  server, its Fullscreen button becomes **Hide controls** here. On older servers it does nothing.
 - **Changing a cover does nothing.** Editing is not a goal of this app, so it has no file picker. Use a browser.
 - **Sound stops when the app goes to the background,** and comes back when you return. The disc keeps playing on the
   server. Swiping the app away does not stop the disc either: press Back first.
