@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The same colors as the StreamISO web interface and icon. -->
+    <color name="background">#0D0F1C</color>
+    <color name="accent">#F0B429</color>
+    <color name="error">#FF8A80</color>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    StreamISO is served over plain HTTP on the local network, at an address the user types in, so it
+    cannot be listed here by domain. Use only on a trusted network: see "Why cleartext HTTP" in the README.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

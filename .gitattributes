@@ -1,0 +1,9 @@
+* text=auto
+
+# gradlew runs on the Linux CI runner and breaks with CRLF line endings
+gradlew text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+
+*.jar binary
+*.png binary
