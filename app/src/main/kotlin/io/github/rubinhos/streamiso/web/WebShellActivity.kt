@@ -10,6 +10,8 @@ import android.graphics.Bitmap
 import android.graphics.Insets
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.ViewGroup
@@ -17,6 +19,7 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
@@ -29,6 +32,7 @@ import android.window.OnBackInvokedDispatcher
 import android.widget.TextView
 import io.github.rubinhos.streamiso.R
 import io.github.rubinhos.streamiso.server.DiscKind
+import io.github.rubinhos.streamiso.server.Health
 import io.github.rubinhos.streamiso.server.Route
 import io.github.rubinhos.streamiso.server.ServerAddress
 import io.github.rubinhos.streamiso.server.ServerStore
@@ -45,11 +49,14 @@ import java.util.concurrent.Executors
 class WebShellActivity : Activity() {
 
     private val background: ExecutorService = Executors.newSingleThreadExecutor()
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private lateinit var address: ServerAddress
     private lateinit var client: StreamIsoClient
     private lateinit var root: ViewGroup
     private lateinit var webView: WebView
+    private lateinit var loadingPanel: View
+    private lateinit var loadingText: TextView
     private lateinit var errorPanel: View
     private lateinit var errorText: TextView
 
@@ -60,6 +67,11 @@ class WebShellActivity : Activity() {
 
     // Bumped on every route change, so that a late answer about an old player page is ignored.
     private var playerGeneration = 0
+
+    // Bumped on every page the app opens itself, so that a late health check for an older one is ignored.
+    private var loadGeneration = 0
+    private var loadingUrl: String? = null
+    private val loadTimeout = Runnable { onLoadTimedOut() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +88,8 @@ class WebShellActivity : Activity() {
         setContentView(R.layout.activity_web_shell)
         root = findViewById(R.id.root)
         webView = findViewById(R.id.web_view)
+        loadingPanel = findViewById(R.id.loading_panel)
+        loadingText = findViewById(R.id.loading_text)
         errorPanel = findViewById(R.id.error_panel)
         errorText = findViewById(R.id.error_text)
 
@@ -84,7 +98,7 @@ class WebShellActivity : Activity() {
         setUpErrorPanel()
         setUpBackButton()
 
-        webView.loadUrl(address.url("/"))
+        openPage(address.url("/"))
     }
 
     override fun onPause() {
@@ -99,6 +113,7 @@ class WebShellActivity : Activity() {
 
     override fun onDestroy() {
         background.shutdownNow()
+        mainHandler.removeCallbacksAndMessages(null)
         if (::webView.isInitialized) {
             root.removeView(webView)
             webView.destroy()
@@ -199,7 +214,7 @@ class WebShellActivity : Activity() {
 
     private fun handleBack() {
         when {
-            errorPanel.visibility == View.VISIBLE -> finish()
+            errorPanel.visibility == View.VISIBLE || loadingPanel.visibility == View.VISIBLE -> finish()
             route == Route.PLAYER -> stopAndReturnToCatalog()
             route == Route.CATALOG -> finish()
             webView.canGoBack() -> webView.goBack()
@@ -213,8 +228,8 @@ class WebShellActivity : Activity() {
         background.execute {
             client.stop()
             runOnUiThread {
-                // Goes back even if the stop failed: the catalog then shows what is wrong with the server.
-                if (!isDestroyed) webView.loadUrl(address.url("/"))
+                // Goes back even if the stop failed: the error screen then shows what is wrong with the server.
+                if (!isDestroyed) openPage(address.url("/"))
             }
         }
     }
@@ -223,13 +238,58 @@ class WebShellActivity : Activity() {
 
     private fun setUpErrorPanel() {
         findViewById<View>(R.id.retry_button).setOnClickListener {
-            errorPanel.visibility = View.GONE
-            webView.loadUrl(failedUrl ?: address.url("/"))
+            openPage(failedUrl ?: address.url("/"))
         }
         findViewById<View>(R.id.change_address_button).setOnClickListener { openServerSetup() }
     }
 
+    /**
+     * Opens a page of the server, first asking it GET /healthz with a short timeout. Without that, a
+     * server that is off (rather than refusing the connection) leaves the WebView waiting on a black
+     * screen for a minute or more before it reports anything.
+     */
+    private fun openPage(url: String) {
+        val generation = ++loadGeneration
+        mainHandler.removeCallbacks(loadTimeout)
+        errorPanel.visibility = View.GONE
+        loadingText.text = getString(R.string.shell_loading, address.display)
+        loadingPanel.visibility = View.VISIBLE
+        background.execute {
+            val health = client.checkHealth()
+            runOnUiThread {
+                if (isDestroyed || generation != loadGeneration) return@runOnUiThread
+                when (health) {
+                    Health.OK -> {
+                        loadingUrl = url
+                        mainHandler.postDelayed(loadTimeout, PAGE_TIMEOUT_SECONDS * 1000L)
+                        webView.loadUrl(url)
+                    }
+                    Health.UNREACHABLE -> showError(url, getString(R.string.shell_error_no_answer))
+                    Health.NOT_STREAMISO -> showError(url, getString(R.string.shell_error_not_streamiso))
+                }
+            }
+        }
+    }
+
+    // The server answered the health check, but the page itself never finished.
+    private fun onLoadTimedOut() {
+        val url = loadingUrl ?: return
+        webView.stopLoading()
+        showError(url, getString(R.string.shell_error_timeout, PAGE_TIMEOUT_SECONDS))
+    }
+
+    private fun onPageLoaded() {
+        mainHandler.removeCallbacks(loadTimeout)
+        loadingUrl = null
+        loadingPanel.visibility = View.GONE
+    }
+
     private fun showError(url: String, detail: String) {
+        // Only the first error of a load counts: stopping a load can report a second, meaningless one.
+        if (errorPanel.visibility == View.VISIBLE) return
+        mainHandler.removeCallbacks(loadTimeout)
+        loadingUrl = null
+        loadingPanel.visibility = View.GONE
         failedUrl = url.takeIf(address::allowsNavigation)
         errorText.text = getString(R.string.shell_error_message, address.display, detail)
         errorPanel.visibility = View.VISIBLE
@@ -265,6 +325,8 @@ class WebShellActivity : Activity() {
         WebView.setWebContentsDebuggingEnabled(applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
 
         webView.webViewClient = ShellWebViewClient()
+        // Lets the catalog show its Server button. Pages only ever come from the configured server.
+        webView.addJavascriptInterface(AppBridge(), "StreamIsoAndroid")
         webView.webChromeClient = object : WebChromeClient() {
             // The app only receives video: never grant the camera or the microphone.
             override fun onPermissionRequest(request: PermissionRequest) {
@@ -282,6 +344,15 @@ class WebShellActivity : Activity() {
                 showServerDialog()
                 true
             }
+        }
+    }
+
+    /** What the web pages may ask of the app, as `window.StreamIsoAndroid`. Called on a WebView thread. */
+    private inner class AppBridge {
+        // The only thing it does is open the address screen, where the user decides.
+        @JavascriptInterface
+        fun changeServer() {
+            runOnUiThread { if (!isDestroyed) openServerSetup() }
         }
     }
 
@@ -304,6 +375,10 @@ class WebShellActivity : Activity() {
             onUrlChanged(url)
         }
 
+        override fun onPageFinished(view: WebView, url: String) {
+            onPageLoaded()
+        }
+
         override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
             onUrlChanged(url)
         }
@@ -321,5 +396,10 @@ class WebShellActivity : Activity() {
             recreate()
             return true
         }
+    }
+
+    private companion object {
+        // Generous: the server already answered the health check, so this only catches a load that hangs.
+        const val PAGE_TIMEOUT_SECONDS = 20
     }
 }
