@@ -6,13 +6,17 @@
     <string name="setup_address_label">Server address</string>
     <string name="setup_address_hint">192.168.0.10:8080</string>
     <string name="setup_connect">Connect</string>
-    <string name="setup_later_hint">To change the address later, long-press the catalog.</string>
+    <string name="setup_later_hint">To change the address later, tap Server at the top of the catalog, or long-press the catalog.</string>
     <string name="setup_error_invalid">That does not look like a server address. Use the form 192.168.0.10:8080.</string>
     <string name="setup_error_unreachable">Could not reach %1$s. Check the address, that the server is running, and that this phone is on the same network.</string>
     <string name="setup_error_not_streamiso">%1$s answered, but it does not look like a StreamISO server.</string>
 
     <string name="shell_error_title">Cannot reach the server</string>
     <string name="shell_error_message">Could not load StreamISO from %1$s. The server may be off, or the address may be wrong.\n\n%2$s</string>
+    <string name="shell_error_no_answer">No answer within 5 seconds.</string>
+    <string name="shell_error_not_streamiso">It answered, but it does not look like a StreamISO server.</string>
+    <string name="shell_error_timeout">The page did not finish loading within %1$d seconds.</string>
+    <string name="shell_loading">Connecting to %1$s…</string>
     <string name="retry">Try again</string>
     <string name="change_address">Change address</string>
 

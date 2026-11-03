@@ -35,8 +35,9 @@ formal code review or security audit. Treat it as a home-lab tool and read the c
 The first time you open the app, type the address of your server, for example `192.168.0.10:8080`, and tap
 **Connect**. The app checks it with `GET /healthz` and remembers it. If you leave out the port, it uses 8080.
 
-To change it later, **long-press an empty part of the catalog** and choose **Change address**. The error screen has
-the same button.
+To change it later, tap **Server** at the top of the catalog (it needs a current StreamISO server; on older ones,
+**long-press an empty part of the catalog** and choose **Change address**). The error screen has a **Change address**
+button too.
 
 ## How it behaves
 
@@ -45,7 +46,8 @@ the same button.
 | Catalog | Follows the phone's rotation setting | Leaves the app |
 | Playing a DVD | Immersive full screen, locked in landscape, stays on | Stops the disc and returns to the catalog |
 | Playing an audio CD | Locked in portrait, stays on | Stops the disc and returns to the catalog |
-| Server unreachable | Error with **Try again** and **Change address** | Leaves the app |
+| Connecting | "Connecting to ..." with a spinner, while the app checks `GET /healthz` (5 s at most) | Leaves the app |
+| Server unreachable | Error with **Try again** and **Change address**, after 5 s at most (20 s if a page hangs) | Leaves the app |
 
 In immersive mode the system bars are hidden: swipe from the edge of the screen to bring them back, and swipe again
 for the Back gesture.
@@ -73,7 +75,7 @@ internet.**
 - **`NEKO_PUBLIC_URL` on another host does not work.** The app blocks every host other than the server's, so a video
   stream published on a different host is refused. A different port of the same host is fine.
 - **The web player cannot go fullscreen by itself in the app,** but DVDs are already full screen. With a current StreamISO
-  server, its Fullscreen button becomes **Hide controls** here. On older servers it does nothing.
+  server, its Fullscreen button is left out here, and the handle at the bottom collapses the controls instead.
 - **Changing a cover does nothing.** Editing is not a goal of this app, so it has no file picker. Use a browser.
 - **Sound stops when the app goes to the background,** and comes back when you return. The disc keeps playing on the
   server. Swiping the app away does not stop the disc either: press Back first.
