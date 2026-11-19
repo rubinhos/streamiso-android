@@ -45,6 +45,55 @@
             android:singleLine="true" />
 
         <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:labelFor="@+id/second_input"
+            android:text="@string/setup_second_label" />
+
+        <EditText
+            android:id="@id/second_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="no"
+            android:hint="@string/setup_second_hint"
+            android:imeOptions="actionGo"
+            android:importantForAutofill="no"
+            android:inputType="textUri"
+            android:singleLine="true" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/setup_choice_label" />
+
+        <RadioGroup
+            android:id="@+id/choice_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checkedButton="@+id/choice_auto">
+
+            <RadioButton
+                android:id="@id/choice_auto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/setup_choice_auto" />
+
+            <RadioButton
+                android:id="@+id/choice_first"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/setup_choice_first" />
+
+            <RadioButton
+                android:id="@+id/choice_second"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/setup_choice_second" />
+        </RadioGroup>
+
+        <TextView
             android:id="@+id/error_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

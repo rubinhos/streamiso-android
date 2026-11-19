@@ -13,8 +13,9 @@ enum class DiscKind { DVD, CD }
 /** The few calls the app makes by itself. All of them block, so call them off the main thread. */
 class StreamIsoClient(private val address: ServerAddress) {
 
-    fun checkHealth(): Health = try {
-        val (status, body) = request("GET", "/healthz")
+    /** [timeoutMillis] is shorter when another address can be tried next. */
+    fun checkHealth(timeoutMillis: Int = TIMEOUT_MILLIS): Health = try {
+        val (status, body) = request("GET", "/healthz", timeoutMillis)
         val ok = status == HttpURLConnection.HTTP_OK && JSONObject(body).optBoolean("ok")
         if (ok) Health.OK else Health.NOT_STREAMISO
     } catch (_: JSONException) {
@@ -46,12 +47,12 @@ class StreamIsoClient(private val address: ServerAddress) {
         false
     }
 
-    private fun request(method: String, path: String): Pair<Int, String> {
+    private fun request(method: String, path: String, timeoutMillis: Int = TIMEOUT_MILLIS): Pair<Int, String> {
         val connection = URL(address.url(path)).openConnection() as HttpURLConnection
         try {
             connection.requestMethod = method
-            connection.connectTimeout = TIMEOUT_MILLIS
-            connection.readTimeout = TIMEOUT_MILLIS
+            connection.connectTimeout = timeoutMillis
+            connection.readTimeout = timeoutMillis
             connection.instanceFollowRedirects = false
             val status = connection.responseCode
             val stream = if (status < HttpURLConnection.HTTP_BAD_REQUEST) connection.inputStream else connection.errorStream
@@ -61,7 +62,25 @@ class StreamIsoClient(private val address: ServerAddress) {
         }
     }
 
-    private companion object {
+    companion object {
+        /**
+         * The first of the addresses to try that answers as StreamISO, with [Health.OK]. If none does, the last one
+         * tried and what was wrong with it. Blocks, so call it off the main thread.
+         */
+        fun reach(servers: ServerList): Pair<ServerAddress, Health> {
+            val list = servers.candidates
+            var result = list.last() to Health.UNREACHABLE
+            for ((i, address) in list.withIndex()) {
+                val health = StreamIsoClient(address).checkHealth(if (i < list.lastIndex) PROBE_MILLIS else TIMEOUT_MILLIS)
+                result = address to health
+                if (health == Health.OK) break
+            }
+            return result
+        }
+
         const val TIMEOUT_MILLIS = 5000
+
+        /** Enough for a server that is on; short enough not to keep the viewer waiting before the second address. */
+        const val PROBE_MILLIS = 3000
     }
 }
