@@ -5,10 +5,17 @@
     <string name="setup_title">Connect to your StreamISO server</string>
     <string name="setup_address_label">Server address</string>
     <string name="setup_address_hint">192.168.0.10:8080</string>
+    <string name="setup_second_label">Second address (optional), such as the server\'s Tailscale address</string>
+    <string name="setup_second_hint">100.101.102.103:8080</string>
+    <string name="setup_choice_label">Which address to use</string>
+    <string name="setup_choice_auto">Automatic: the first, or the second when the first does not answer</string>
+    <string name="setup_choice_first">Always the first address</string>
+    <string name="setup_choice_second">Always the second address</string>
+    <string name="setup_error_second_invalid">The second address does not look like a server address. Use the form 100.101.102.103:8080.</string>
     <string name="setup_connect">Connect</string>
-    <string name="setup_later_hint">To change the address later, tap Server at the top of the catalog, or long-press the catalog.</string>
+    <string name="setup_later_hint">To change the addresses later, tap Server at the top of the catalog, or long-press the catalog, which also switches to the other address.</string>
     <string name="setup_error_invalid">That does not look like a server address. Use the form 192.168.0.10:8080.</string>
-    <string name="setup_error_unreachable">Could not reach %1$s. Check the address, that the server is running, and that this phone is on the same network.</string>
+    <string name="setup_error_unreachable">Could not reach %1$s. Check the address, that the server is running, and that this phone is on the same network or connected to it through Tailscale.</string>
     <string name="setup_error_not_streamiso">%1$s answered, but it does not look like a StreamISO server.</string>
 
     <string name="shell_error_title">Cannot reach the server</string>
@@ -19,6 +26,7 @@
     <string name="shell_loading">Connecting to %1$s…</string>
     <string name="retry">Try again</string>
     <string name="change_address">Change address</string>
+    <string name="use_address">Use %1$s</string>
 
     <string name="server_dialog_message">Connected to %1$s</string>
 </resources>

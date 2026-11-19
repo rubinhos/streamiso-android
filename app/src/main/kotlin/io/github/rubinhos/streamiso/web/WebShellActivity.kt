@@ -8,6 +8,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
 import android.graphics.Insets
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -35,6 +36,7 @@ import io.github.rubinhos.streamiso.server.DiscKind
 import io.github.rubinhos.streamiso.server.Health
 import io.github.rubinhos.streamiso.server.Route
 import io.github.rubinhos.streamiso.server.ServerAddress
+import io.github.rubinhos.streamiso.server.ServerList
 import io.github.rubinhos.streamiso.server.ServerStore
 import io.github.rubinhos.streamiso.server.StreamIsoClient
 import io.github.rubinhos.streamiso.setup.ServerSetupActivity
@@ -51,6 +53,9 @@ class WebShellActivity : Activity() {
     private val background: ExecutorService = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    private lateinit var servers: ServerList
+
+    // The saved address that answered last: pages come only from it.
     private lateinit var address: ServerAddress
     private lateinit var client: StreamIsoClient
     private lateinit var root: ViewGroup
@@ -82,8 +87,9 @@ class WebShellActivity : Activity() {
             finish()
             return
         }
-        address = saved
-        client = StreamIsoClient(saved)
+        servers = saved
+        address = saved.candidates.first()
+        client = StreamIsoClient(address)
 
         setContentView(R.layout.activity_web_shell)
         root = findViewById(R.id.root)
@@ -244,31 +250,50 @@ class WebShellActivity : Activity() {
     }
 
     /**
-     * Opens a page of the server, first asking it GET /healthz with a short timeout. Without that, a
-     * server that is off (rather than refusing the connection) leaves the WebView waiting on a black
-     * screen for a minute or more before it reports anything.
+     * Opens a page of the server (the path of [url]), first asking GET /healthz with a short timeout. Without
+     * that, a server that is off (rather than refusing the connection) leaves the WebView waiting on a black
+     * screen for a minute or more before it reports anything. With two saved addresses, the page comes from
+     * the first one that answers (see [ServerList.candidates]).
      */
     private fun openPage(url: String) {
         val generation = ++loadGeneration
+        val path = pathOf(url)
         mainHandler.removeCallbacks(loadTimeout)
         errorPanel.visibility = View.GONE
-        loadingText.text = getString(R.string.shell_loading, address.display)
+        loadingText.text = getString(R.string.shell_loading, servers.candidates.joinToString(" / ") { it.display })
         loadingPanel.visibility = View.VISIBLE
+        val list = servers
         background.execute {
-            val health = client.checkHealth()
+            val (reached, health) = StreamIsoClient.reach(list)
             runOnUiThread {
                 if (isDestroyed || generation != loadGeneration) return@runOnUiThread
+                useAddress(reached)
+                val target = reached.url(path)
                 when (health) {
                     Health.OK -> {
-                        loadingUrl = url
+                        loadingUrl = target
                         mainHandler.postDelayed(loadTimeout, PAGE_TIMEOUT_SECONDS * 1000L)
-                        webView.loadUrl(url)
+                        webView.loadUrl(target)
                     }
-                    Health.UNREACHABLE -> showError(url, getString(R.string.shell_error_no_answer))
-                    Health.NOT_STREAMISO -> showError(url, getString(R.string.shell_error_not_streamiso))
+                    Health.UNREACHABLE -> showError(target, getString(R.string.shell_error_no_answer))
+                    Health.NOT_STREAMISO -> showError(target, getString(R.string.shell_error_not_streamiso))
                 }
             }
         }
+    }
+
+    private fun useAddress(reached: ServerAddress) {
+        if (reached == address) return
+        address = reached
+        client = StreamIsoClient(reached)
+    }
+
+    // "/player?x=1" from a URL of the server; the catalog for anything else.
+    private fun pathOf(url: String): String {
+        if (!address.allowsNavigation(url)) return "/"
+        val uri = Uri.parse(url)
+        val path = uri.encodedPath?.takeIf { it.isNotEmpty() } ?: "/"
+        return uri.encodedQuery?.let { "$path?$it" } ?: path
     }
 
     // The server answered the health check, but the page itself never finished.
@@ -299,13 +324,22 @@ class WebShellActivity : Activity() {
         startActivity(Intent(this, ServerSetupActivity::class.java))
     }
 
+    // With a second address, the dialog also switches to the other one, and keeps using it until the address
+    // screen sets Automatic again.
     private fun showServerDialog() {
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle(R.string.app_name)
             .setMessage(getString(R.string.server_dialog_message, address.display))
             .setPositiveButton(R.string.change_address) { _, _ -> openServerSetup() }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        servers.other(address)?.let { other ->
+            dialog.setNeutralButton(getString(R.string.use_address, other.display)) { _, _ ->
+                servers = servers.choosing(other)
+                ServerStore(this).save(servers)
+                openPage(other.url("/"))
+            }
+        }
+        dialog.show()
     }
 
     // ------------------------------------------------------------------ WebView
