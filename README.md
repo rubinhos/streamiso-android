@@ -18,8 +18,8 @@ formal code review or security audit. Treat it as a home-lab tool and read the c
 ## Requirements
 
 - Android 11 or newer.
-- A running StreamISO server that the phone can reach on your local network, with `SERVER_IP` set to an address the
-  phone can use. Try `http://<server>:8080` in the phone's browser first: if video plays there, the network is fine.
+- A running StreamISO server that the phone can reach, on your local network or through Tailscale (see
+  [Using it away from home](#using-it-away-from-home-tailscale)), with `SERVER_IP` set to an address the phone can use. Try `http://<server>:8080` in the phone's browser first: if video plays there, the network is fine.
 
 ## Install
 
@@ -35,9 +35,33 @@ formal code review or security audit. Treat it as a home-lab tool and read the c
 The first time you open the app, type the address of your server, for example `192.168.0.10:8080`, and tap
 **Connect**. The app checks it with `GET /healthz` and remembers it. If you leave out the port, it uses 8080.
 
+You can also type a **second address** for the same server, such as its Tailscale address, and choose which one to
+use: **Automatic** tries the first address and, if it does not answer within 3 seconds, the second one; or always the
+first, or always the second.
+
 To change it later, tap **Server** at the top of the catalog (it needs a current StreamISO server; on older ones,
 **long-press an empty part of the catalog** and choose **Change address**). The error screen has a **Change address**
 button too.
+
+With two addresses, **long-press the catalog** to switch to the other one: the dialog has a **Use <address>** button.
+The app then keeps using that address until you choose Automatic again on the address screen.
+
+## Using it away from home (Tailscale)
+
+StreamISO has no login, so do not open its ports on your router. Use [Tailscale](https://tailscale.com), a private
+VPN between your own devices, instead:
+
+1. Set up the server for Tailscale as the
+   [StreamISO README](https://github.com/rubinhos/streamiso#watching-from-another-network-tailscale) describes: Tailscale
+   on the server, and its Tailscale IP added to `SERVER_IP`.
+2. Install Tailscale on the phone from the Play Store and sign in with the same account.
+3. In the app, keep the home address (`192.168.0.10:8080`) as the first one, type the server's Tailscale address
+   (`100.101.102.103:8080`) as the second one, and leave **Automatic** on.
+
+At home the app uses the home address. Away, with Tailscale on, the home address does not answer, so the app moves to
+the Tailscale one within 3 seconds. To skip that wait while away, long-press the catalog and choose the Tailscale
+address, then switch back the same way at home. If the video does not start away from home, the server is missing its
+Tailscale IP in `SERVER_IP`.
 
 ## How it behaves
 
@@ -46,13 +70,13 @@ button too.
 | Catalog | Follows the phone's rotation setting | Leaves the app |
 | Playing a DVD | Immersive full screen, locked in landscape, stays on | Stops the disc and returns to the catalog |
 | Playing an audio CD | Locked in portrait, stays on | Stops the disc and returns to the catalog |
-| Connecting | "Connecting to ..." with a spinner, while the app checks `GET /healthz` (5 s at most) | Leaves the app |
+| Connecting | "Connecting to ..." with a spinner, while the app checks `GET /healthz` (5 s at most, 8 s with a second address) | Leaves the app |
 | Server unreachable | Error with **Try again** and **Change address**, after 5 s at most (20 s if a page hangs) | Leaves the app |
 
 In immersive mode the system bars are hidden: swipe from the edge of the screen to bring them back, and swipe again
 for the Back gesture.
 
-The app loads nothing from other sites. Top-level pages must come from the exact address you typed. Frames and
+The app loads nothing from other sites. Top-level pages must come from the saved address that answered. Frames and
 resources may come from any port of the same host, because the video stream (Neko) is served from another port.
 Everything else is refused. Safe Browsing and WebView metrics are turned off so that the WebView does not contact
 Google. The app asks for no camera, microphone or storage permission.
@@ -87,7 +111,8 @@ internet.**
 ## Troubleshooting
 
 **"Cannot reach the server".** Check that the server is running and the address is right, and that the phone is on the
-same network and not on a guest Wi-Fi with client isolation.
+same network and not on a guest Wi-Fi with client isolation. Away from home, check that Tailscale is on, on the phone
+and on the server, and that the second address is the server's Tailscale address.
 
 **The catalog opens, but the player has no video.** WebRTC is not getting through. Check `SERVER_IP` and UDP ports
 52000-52100 on the server: see Troubleshooting in the
@@ -103,8 +128,9 @@ the WebRTC video in the WebView, sound, rotation, immersive mode, the Back butto
 
 What has run is the build itself: the Build workflow compiles the debug APK and passes the unit tests on GitHub Actions.
 
-The unit tests cover only the address parsing and the rules for what may be loaded
-([`ServerAddressTest`](app/src/test/kotlin/io/github/rubinhos/streamiso/server/ServerAddressTest.kt)).
+The unit tests cover only the address parsing, the rules for what may be loaded
+([`ServerAddressTest`](app/src/test/kotlin/io/github/rubinhos/streamiso/server/ServerAddressTest.kt)) and which saved address
+is tried ([`ServerListTest`](app/src/test/kotlin/io/github/rubinhos/streamiso/server/ServerListTest.kt)).
 
 ## Building
 
@@ -196,8 +222,8 @@ tag. A tag you pushed by hand stays in place even if its release failed, so push
 
 ```
 app/src/main/kotlin/io/github/rubinhos/streamiso/
-├── server/   address and URL rules, HTTP calls, saved address (no WebView code)
-├── setup/    the screen that asks for the server address
+├── server/   address and URL rules, HTTP calls, saved addresses (no WebView code)
+├── setup/    the screen that asks for the server addresses
 └── web/      the WebView shell: orientation, immersive mode, Back button, errors
 ```
 
